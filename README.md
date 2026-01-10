@@ -176,4 +176,12 @@ Please add the following as **Admin Collaborators** to your GitHub repository:
 4. Enter the emails above
 5. Set access level to **Admin**
 
+
+## Important
+To keep your assessment properly logged and reviewed, submit your completed work through our official submission portal:
+https://forms.gle/1iJ2AHzMWsWecLUE6
+
+You have 4 business days from the moment you submit this form to complete and submit your assessment. Assessments sent after that window may not be reviewed.
+This portal ensures your work is tracked correctly and routed to the hiring team for evaluation."
+
 This gives us access to CI history, secrets, and workflow configurations for review.
