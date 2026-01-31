@@ -59,6 +59,10 @@ jobs:
         with:
           name: cdktf-plan
           path: iac/plan.json
+
+      - name: Show plan in logs
+        working-directory: iac
+        run: cat plan.json
   
   deploy:
     needs: plan
@@ -111,6 +115,8 @@ jobs:
 
       - name: Deploy using pre-generated plan
         working-directory: iac
+        env:
+          CDKTF_JSON_DIFF_PATH: iac/plan.json
         run: npx cdktf deploy -- -auto-approve -input=false -no-color
 
       - name: Show outputs
