@@ -1,11 +1,14 @@
 name: Deploy IaC (manual)
 on:
   workflow_dispatch:
-    inputs:
-      environment:
+    environment:
         description: 'Deployment environment.'
         required: true
         default: production
+        type: choice
+        options:
+          - development
+          - production
       aws_region:
         description: 'Deployment Region.'
         required: true
@@ -106,14 +109,6 @@ jobs:
       - name: CDKTF synth
         working-directory: iac
         run: npx cdktf synth
-
-      # - name: Download plan artifact
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: cdktf-plan
-      #     path: iac/
-      # - name: Install CDKTF CLI globally
-      #   run: npm install -g cdktf-cli@0.21.0
         
       - name: Deploy using pre-generated plan
         working-directory: iac
