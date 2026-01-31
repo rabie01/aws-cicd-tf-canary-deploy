@@ -96,7 +96,7 @@ jobs:
       - name: Install & build (iac)
         working-directory: iac
         run: |
-          npm ci
+          npm install
           npm run build
 
       - name: CDKTF get providers
