@@ -3,6 +3,7 @@ import { IamRole } from '@cdktf/provider-aws/lib/iam-role';
 import { IamRolePolicy } from '@cdktf/provider-aws/lib/iam-role-policy';
 import { IamRolePolicyAttachment } from '@cdktf/provider-aws/lib/iam-role-policy-attachment';
 import { InfrastructureConfig } from './config';
+import { DataAwsCallerIdentity } from '@cdktf/provider-aws';
 
 export interface IamStackOutput {
   ecsTaskExecutionRoleArn: string;
@@ -14,7 +15,9 @@ export class IamStack extends Construct {
 
   constructor(scope: Construct, id: string, config: InfrastructureConfig, ecrRepoArn: string) {
     super(scope, id);
-
+    //get account_id
+    const caller = new DataAwsCallerIdentity(this, 'current');
+    
     // ECS Task Execution Role - for pulling images and pushing logs
     const ecsTaskExecutionRole = new IamRole(this, 'ecs_task_execution_role', {
       name: `${config.appName}-ecs-task-execution-role`,
@@ -64,7 +67,7 @@ export class IamStack extends Construct {
               'logs:CreateLogStream',
               'logs:PutLogEvents',
             ],
-            Resource: `arn:aws:logs:${config.awsRegion}:${config.awsAccountId}:log-group:/ecs/${config.appName}:*`,
+            Resource: `arn:aws:logs:${config.awsRegion}:${caller.accountid}:log-group:/ecs/${config.appName}:*`,
           },
         ],
       }),
@@ -105,7 +108,7 @@ export class IamStack extends Construct {
               'logs:CreateLogStream',
               'logs:PutLogEvents',
             ],
-            Resource: `arn:aws:logs:${config.awsRegion}:${config.awsAccountId}:log-group:/ecs/${config.appName}:*`,
+            Resource: `arn:aws:logs:${config.awsRegion}:${caller.accountid}:log-group:/ecs/${config.appName}:*`,
           },
         ],
       }),
