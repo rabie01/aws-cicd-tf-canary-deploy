@@ -117,8 +117,8 @@ jobs:
         working-directory: iac
         env:
           CDKTF_JSON_DIFF_PATH: iac/plan.json
-        run: npx cdktf deploy -- -auto-approve -input=false -no-color
-
+        run: cdktf deploy --auto-approve
+        
       - name: Show outputs
         working-directory: iac
         run: npx cdktf output -json || true
