@@ -15,6 +15,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
+    env:
+      CI: 'true'
+      TERM: xterm-256color
 
     steps:
       - name: Checkout code
@@ -53,7 +56,7 @@ jobs:
 
       - name: CDKTF deploy (auto-approve)
         working-directory: iac
-        run: yes | npx cdktf deploy
+        run: npx cdktf deploy -- -auto-approve -input=false -no-color
 
       - name: Show outputs
         working-directory: iac
