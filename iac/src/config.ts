@@ -5,7 +5,7 @@ dotenv.config();
 export interface InfrastructureConfig {
   // AWS
   awsRegion: string;
-  awsAccountId: string;
+  // awsAccountId: string;
   bucketName: string;
   stateKey: string;
 
@@ -38,7 +38,7 @@ export interface InfrastructureConfig {
 export function getConfig(): InfrastructureConfig {
   const config: InfrastructureConfig = {
     awsRegion: process.env.AWS_REGION || 'us-east-1',
-    awsAccountId: process.env.AWS_ACCOUNT_ID || '',
+    // awsAccountId: process.env.AWS_ACCOUNT_ID || '',
     bucketName: process.env.BUCKET_NAME || 'mybuckett21000',
     stateKey: process.env.STATE_KEY || 'turbovets/terraform.tfstate',
     appName: process.env.APP_NAME || 'turbovets',
@@ -60,10 +60,10 @@ export function getConfig(): InfrastructureConfig {
     logRetentionDays: parseInt(process.env.LOG_RETENTION_DAYS || '7', 10),
   };
 
-  // Validate required config
-  if (!config.awsAccountId) {
-    throw new Error('AWS_ACCOUNT_ID environment variable is required');
-  }
+  // // Validate required config
+  // if (!config.awsAccountId) {
+  //   throw new Error('AWS_ACCOUNT_ID environment variable is required');
+  // }
 
   return config;
 }
