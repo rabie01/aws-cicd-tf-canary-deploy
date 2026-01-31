@@ -38,6 +38,10 @@ jobs:
           npm ci
           npm run build
 
+      - name: CDKTF get providers
+        working-directory: iac
+        run: npx cdktf get
+
       - name: CDKTF synth
         working-directory: iac
         run: npx cdktf synth
