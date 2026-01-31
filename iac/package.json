@@ -2,12 +2,11 @@
   "name": "turbovets-infrastructure",
   "version": "1.0.0",
   "description": "CDKTF infrastructure for TurboVets app (ECS, ECR, VPC, IAM)",
-  "main": "dist/main.js",
   "scripts": {
     "build": "tsc",
-    "deploy": "cdktf deploy",
-    "plan": "cdktf plan",
     "synth": "cdktf synth",
+    "plan": "cdktf diff",
+    "deploy": "cdktf deploy",
     "destroy": "cdktf destroy"
   },
   "dependencies": {
@@ -18,8 +17,8 @@
   },
   "devDependencies": {
     "typescript": "^5.3.0",
+    "ts-node": "^10.9.2",
     "cdktf-cli": "^0.21.0",
-    "ts-node-dev": "^2.0.0",
     "@types/node": "^20.0.0"
   }
 }
