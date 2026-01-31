@@ -112,11 +112,11 @@ jobs:
         with:
           name: cdktf-plan
           path: iac/
-
+      - name: Install CDKTF CLI globally
+        run: npm install -g cdktf-cli@0.21.0
+        
       - name: Deploy using pre-generated plan
         working-directory: iac
-        env:
-          CDKTF_JSON_DIFF_PATH: iac/plan.json
         run: cdktf deploy --auto-approve
         
       - name: Show outputs
