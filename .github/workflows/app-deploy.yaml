@@ -4,10 +4,14 @@ on:
   push:
     branches:
       - main
-      - develop
+    paths:
+      - 'app/**'
+
   pull_request:
     branches:
       - main
+    paths:
+      - 'app/**'
 
 env:
   AWS_REGION: us-east-1
@@ -21,9 +25,7 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
     outputs:
-      image-tag: ${{ steps.meta.outputs.tags }}
       image-uri: ${{ steps.image.outputs.image }}
 
     steps:
@@ -44,7 +46,7 @@ jobs:
       - name: Build Docker image
         id: docker-build
         run: |
-          docker build -f Dockerfile -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO_NAME }}:${{ github.sha }} .
+          docker build -f app/Dockerfile -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO_NAME }}:${{ github.sha }} app
           docker tag ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO_NAME }}:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO_NAME }}:latest
 
       - name: Push image to Amazon ECR
@@ -107,13 +109,17 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm install
+        run: |
+          cd app
+          npm install
 
       - name: Build Docker image
-        run: docker build -f Dockerfile -t turbovets:test .
+        run: docker build -f app/Dockerfile -t turbovets:test app
 
       - name: Run lint check
-        run: npm run lint || true
+        run: |
+          cd app
+          npm run lint || true
 
       - name: Verify Docker image
         run: |

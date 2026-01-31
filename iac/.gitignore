@@ -12,5 +12,5 @@ cdktf.out/
 # envs / secrets
 .env
 
-# editor / OS
+# editor
 .vscode/
