@@ -1,0 +1,6 @@
+# build / artifacts
+dist/
+node_modules/
+.env
+# editor
+.vscode/

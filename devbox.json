@@ -1,0 +1,28 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/main/.schema/devbox.schema.json",
+  "packages": [
+    "nodejs@20",
+    "git",
+    "docker",
+    "docker-compose",
+    "awscli2",
+    "terraform"
+  ],
+  "env": {
+    "AWS_PAGER":       "",
+    "DOCKER_BUILDKIT": "1",
+    "NODE_ENV":        "development"
+  },
+  "shell": {
+    "init_hook": [
+      "echo '🚀 Devbox environment loaded'",
+      "docker buildx create --use --name devbox-builder 2>/dev/null || true"
+    ],
+    "scripts": {
+      "dev":   "npm run dev",
+      "build": "npm run build",
+      "test":  "npm test",
+      "cdktf": "npx cdktf"
+    }
+  }
+}

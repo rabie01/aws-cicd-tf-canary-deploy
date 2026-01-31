@@ -1,0 +1,16 @@
+# build / artifacts
+dist/
+node_modules/
+
+# cdktf / terraform local state
+cdktf.out/
+.terraform/
+*.tfstate
+*.tfstate.backup
+.gen/
+
+# envs / secrets
+.env
+
+# editor / OS
+.vscode/
