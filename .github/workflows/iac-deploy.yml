@@ -53,7 +53,7 @@ jobs:
 
       - name: CDKTF deploy (auto-approve)
         working-directory: iac
-        run: npx cdktf deploy
+        run: yes | npx cdktf deploy
 
       - name: Show outputs
         working-directory: iac
