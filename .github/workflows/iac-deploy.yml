@@ -58,19 +58,12 @@ jobs:
       - name: Generate plan JSON
         working-directory: iac
         run: npx cdktf diff --json > plan.json
-
-      - name: Upload plan artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: cdktf-plan
-          path: iac/plan.json
-
+        
       - name: Show plan in logs
         working-directory: iac
         run: cat plan.json
   
   deploy:
-    needs: plan
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
     env:
