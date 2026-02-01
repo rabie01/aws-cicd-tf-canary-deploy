@@ -116,7 +116,7 @@ jobs:
         working-directory: iac
         run: npx cdktf synth
         
-      - name: Deploy using pre-generated plan
+      - name: Deploy The Infrastructure
         working-directory: iac
         run: npx cdktf deploy --auto-approve
         
