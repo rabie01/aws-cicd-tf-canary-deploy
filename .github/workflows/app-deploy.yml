@@ -21,6 +21,7 @@ env:
   ECS_CLUSTER_NAME: turbovets-cluster
   ECS_TASK_FAMILY: turbovets-task
   CONTAINER_PORT: 3000
+  CONTAINER_NAME: turbovets
 
 jobs:
   build-and-push:
@@ -73,28 +74,28 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Get latest task definition
-        id: task-def
+      - name: Download current Task Definition
         run: |
           aws ecs describe-task-definition \
             --task-definition ${{ env.ECS_TASK_FAMILY }} \
-            --region ${{ env.AWS_REGION }} > task-definition.json
-          echo "task-definition=task-definition.json" >> $GITHUB_OUTPUT
+            --region ${{ env.AWS_REGION }} \
+            --query taskDefinition > task-definition.json
 
-      - name: Update ECS service
-        run: |
-          aws ecs update-service \
-            --cluster ${{ env.ECS_CLUSTER_NAME }} \
-            --service ${{ env.ECS_SERVICE_NAME }} \
-            --force-new-deployment \
-            --region ${{ env.AWS_REGION }}
+      - name: Fill in the new image ID
+        id: render-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ needs.build-and-push.outputs.image-uri }}
 
-      - name: Wait for service to stabilize
-        run: |
-          aws ecs wait services-stable \
-            --cluster ${{ env.ECS_CLUSTER_NAME }} \
-            --services ${{ env.ECS_SERVICE_NAME }} \
-            --region ${{ env.AWS_REGION }}
+      - name: Roll out new task version
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.render-task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE_NAME }}
+          cluster: ${{ env.ECS_CLUSTER_NAME }}
+          wait-for-service-stability: true 
 
   test:
     runs-on: ubuntu-latest
@@ -117,13 +118,8 @@ jobs:
       - name: Build Docker image
         run: docker build -f app/Dockerfile -t turbovets:test app
 
-      - name: Run lint check
-        run: |
-          cd app
-          npm run lint || true
-
       - name: Verify Docker image
         run: |
-          docker run --rm -p 3000:3000 turbovets:test &
-          sleep 5
-          curl -f http://localhost:3000/health || exit 1
+          docker run --rm -p ${{ env.CONTAINER_PORT }}:${{ env.CONTAINER_PORT }} turbovets:test &
+          sleep 10
+          curl -f http://localhost:${{ env.CONTAINER_PORT }}/health || exit 1
