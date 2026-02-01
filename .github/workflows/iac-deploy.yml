@@ -5,7 +5,7 @@ on:
       environment:
         description: 'Deployment environment.'
         required: true
-        default: development
+        default: production
         type: choice
         options:
           - development
