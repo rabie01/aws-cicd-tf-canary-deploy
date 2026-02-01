@@ -11,7 +11,7 @@ on:
           - development
           - production
       aws_region:
-        description: 'Deployment Region.'
+        description: 'Deployment Region for infra and tfstate bucket.'
         required: true
         default: us-east-1
       action:
@@ -22,8 +22,14 @@ on:
         options:
           - deploy
           - destroy
+      bucket_name:
+        description: 'AWS S3 bucket name'
+        required: true
+        default: mybuckett21000
+
 env:
   AWS_REGION: ${{ github.event.inputs.aws_region || 'us-east-1' }}
+  BUCKET_NAME: ${{ github.event.inputs.bucket_name }}
         
 jobs:
   plan:
