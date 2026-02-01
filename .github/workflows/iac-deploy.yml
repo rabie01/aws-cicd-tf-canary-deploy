@@ -1,10 +1,11 @@
 name: Deploy IaC (manual)
 on:
   workflow_dispatch:
-    environment:
+    inputs:
+      environment:
         description: 'Deployment environment.'
         required: true
-        default: production
+        default: development
         type: choice
         options:
           - development
