@@ -1,6 +1,9 @@
-# TurboVets - Dockerized Node.js Express App with AWS ECS Deployment
+# TurboVets – Dockerized Node.js Express App on AWS ECS
 
-Complete infrastructure as code setup for deploying a TypeScript Express application using Docker, CDKTF, and AWS ECS Fargate.
+[![App CI/CD](https://github.com/rabie01/aws-cicd-cdktf/actions/workflows/app-deploy.yml/badge.svg)](https://github.com/rabie01/aws-cicd-cdktf/actions/workflows/app-deploy.yml)
+[![IaC Deploy](https://github.com/rabie01/aws-cicd-cdktf/actions/workflows/iac-deploy.yml/badge.svg)](https://github.com/rabie01/aws-cicd-cdktf/actions/workflows/iac-deploy.yml)
+
+Complete Infrastructure-as-Code setup for deploying a **TypeScript Express application** using **Docker**, **CDKTF**, and **AWS ECS Fargate** with an **Application Load Balancer**.
 
 ## 📋 Project Structure
 
@@ -14,9 +17,7 @@ Complete infrastructure as code setup for deploying a TypeScript Express applica
 │   │       └── index.ts      # API routes (includes /health)
 │   ├── package.json          # App dependencies and scripts
 │   ├── README-DEPLOYMENT.md  # App-specific deployment notes (this file)
-│   └── .github/
-│       └── workflows/
-│           └── deploy.yml    # GitHub Actions workflow for app CI/CD
+|
 │
 ├── iac/    # CDKTF Infrastructure as Code
 │   ├── src/
@@ -31,7 +32,11 @@ Complete infrastructure as code setup for deploying a TypeScript Express applica
 │   ├── tsconfig.json         # TypeScript config for IaC
 │   ├── .env.example          # IaC environment template
 │   ├── README.md             # Infrastructure docs and usage
-│   
+│
+│── .github/
+│    └── workflows/
+│        └── iac-deploy.yml    # GitHub Actions workflow for app CI/CD
+|        └── app-deploy.yml    # GitHub Actions workflow for app CI/CD  
 │
 └── devbox/ & root devbox files
   ├── .devbox/              # devbox local environment (optional)
@@ -52,31 +57,33 @@ curl http://localhost:3000
 curl http://localhost:3000/health
 ```
 
-### 2. Deploy to AWS ECS
+### 2. Deploy to AWS ECS (from local machine)
 
 #### Prerequisites
-- AWS account with credentials configured
-- CDKTF and Node.js installed
+- AWS account with credentials configured()
+- CDKTF and Node.js installed(done using devbox shell)
 
 #### Step 1: Prepare Infrastructure Configuration
 
 ```bash
-cd iac
+#clone the repo and run devbox to get all the requirements
+git clone https://github.com/rabie01/aws-cicd-cdktf.git
+devbox shell
 
 # Create environment file
+cd iac
 cp .env.example .env
 
 # Edit .env with your values
-nano .env
+vi .env
+# configure aws
+aws configure
 ```
 
 **Required `.env` values:**
 ```env
-AWS_ACCOUNT_ID=123456789012        # Your AWS account ID
-AWS_REGION=us-east-1               # AWS region
-ENVIRONMENT=production              # Environment name
+BUCKET_NAME=abcdef        # Your s3 bucket name for the state file
 ```
-
 
 #### Step 2: Deploy Infrastructure
 
@@ -148,45 +155,13 @@ curl http://<ALB_DNS_NAME>
 curl http://<ALB_DNS_NAME>/health
 ```
 
-## 🔐 Security Features
-
-### Least Privilege IAM
-- **ECS Task Execution Role**: Only pulls from ECR and pushes to CloudWatch
-- **ECS Task Role**: Only logs to CloudWatch (extensible for app-specific needs)
-- No root or overly permissive policies
-
-### Network Security
-- **ALB Security Group**: Only allows HTTP (80) and HTTPS (443)
-- **ECS Security Group**: Only allows traffic from ALB on container port
-- Private subnets for ECS tasks with NAT Gateway access
-- No direct internet access to ECS instances
-
-### Container Security
-- Multi-stage Docker build (reduces image size and attack surface)
-- Base images: `node:20-slim` for production
-- Health checks on `/health` endpoint
-- Non-root user recommended (add to Dockerfile if needed)
-
-## 📊 Monitoring & Logs
-
-```bash
-# View CloudWatch Logs
-aws logs tail /ecs/turbovets --follow
-
-# Monitor ECS service
-aws ecs describe-services \
-  --cluster turbovets-cluster \
-  --services turbovets-service \
-  --query 'services[0].[status,runningCount,desiredCount]'
-
-# Check auto-scaling metrics
-aws application-autoscaling describe-scaling-activities \
-  --service-namespace ecs
-```
 
 ## 🔄 CI/CD with GitHub Actions
+#### Prerequisites
+- AWS account credentials configured on GitHub secret
+- create production environment and add approvers(for deploy and destroy)
 
-The `.github/workflows/deploy.yml` pipeline:
+The `.github/workflows/app-deploy.yml` pipeline:
 
 1. **On Pull Request**: Tests Docker build
 2. **On Push to main**: 
@@ -194,6 +169,10 @@ The `.github/workflows/deploy.yml` pipeline:
    - Pushes to ECR
    - Updates ECS service
    - Waits for service to stabilize
+  
+The `.github/workflows/iac-deploy.yml` pipeline:
+   Triggered manually to deploy all the infrastructure on aws
+
 
 ### Setup GitHub Actions Secrets
 
@@ -217,13 +196,11 @@ gh secret set AWS_SECRET_ACCESS_KEY --body $YOUR_SECRET_KEY
 
 ### Application (.env for app runtime)
 ```env
-NODE_ENV=production
 PORT=3000
 ```
 
 ### Infrastructure (iac/.env)
 ```env
-AWS_ACCOUNT_ID=123456789012
 AWS_REGION=us-east-1
 APP_NAME=turbovets
 ENVIRONMENT=production
@@ -231,6 +208,7 @@ ECS_DESIRED_COUNT=2
 CONTAINER_CPU=256
 CONTAINER_MEMORY=512
 ```
+
 
 ## 🛠 Advanced Usage
 
@@ -247,10 +225,7 @@ To change settings post-deployment:
 
 ```bash
 # Edit .env in iac/
-# Rerun plan and deploy
-cd iac
-npm run plan
-npm run deploy
+# Rerun workflow
 ```
 
 ### Destroying Infrastructure
@@ -258,29 +233,6 @@ npm run deploy
 ```bash
 cd iac
 npm run destroy
-```
-
-⚠️ **WARNING**: This deletes all resources. Ensure no production data is lost.
-
-## 🧪 Testing Locally
-
-### Docker Compose
-```bash
-docker-compose up --build
-curl http://localhost:3000
-curl http://localhost:3000/health  # Health check endpoint
-```
-
-### Dockerfile (production)
-```bash
-docker build -f Dockerfile -t turbovets:prod .
-docker run -p 3000:3000 turbovets:prod
-```
-
-### Devbox (if using)
-```bash
-devbox shell
-npm run dev   # Local dev with ts-node-dev
 ```
 
 ## 📚 Architecture Diagram
@@ -336,46 +288,11 @@ npm run dev   # Local dev with ts-node-dev
 ┌──────────────────────────────┐
 │ GitHub Actions CI/CD Pipeline │
 ├──────────────────────────────┤
-│ 1. Build Docker image        │
-│ 2. Push to ECR               │
-│ 3. Update ECS service        │
-│ 4. Wait for stabilization    │
+│ 1. Build the infrastructure
+  2. Build Docker image        │
+│ 3. Push to ECR               │
+│ 4. Update ECS service        │
+│ 5. Wait for stabilization
+   
 └──────────────────────────────┘
 ```
-
-## 🐛 Troubleshooting
-
-### Service won't start
-```bash
-# Check ECS task logs
-aws logs tail /ecs/turbovets --follow
-
-# Check task status
-aws ecs list-tasks --cluster turbovets-cluster
-aws ecs describe-tasks --cluster turbovets-cluster --tasks <TASK_ARN>
-```
-
-### Cannot push to ECR
-```bash
-# Re-authenticate
-aws ecr get-login-password --region us-east-1 | \
-  docker login --username AWS --password-stdin \
-  $ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com
-```
-
-### Health check failing
-- Ensure `/health` endpoint returns HTTP 200
-- Check security group allows port 3000 from ALB
-- View ECS task logs for application errors
-
-## 📞 Support
-
-For issues:
-1. Check infrastructure logs: `aws logs tail /ecs/turbovets`
-2. Review ECS service status: `aws ecs describe-services ...`
-3. Verify IAM permissions are sufficient
-4. Ensure Docker image built correctly
-
-## 📄 License
-
-ISC
