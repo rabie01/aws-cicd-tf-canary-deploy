@@ -15,11 +15,11 @@ on:
       - 'app/**'
 
 env:
-  AWS_REGION: us-east-1
+  AWS_REGION: us-east-2
+  ECS_TASK_FAMILY: turbovets-task
   ECR_REPO_NAME: turbovets-app
   ECS_SERVICE_NAME: turbovets-service
   ECS_CLUSTER_NAME: turbovets-cluster
-  ECS_TASK_FAMILY: turbovets-task
   CONTAINER_PORT: 3000
   CONTAINER_NAME: turbovets
 
