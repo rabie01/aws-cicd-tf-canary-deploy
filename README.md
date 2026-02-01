@@ -15,8 +15,12 @@ Complete Infrastructure-as-Code setup for deploying a **TypeScript Express appli
 │   │   ├── server.ts         # Server entry point
 │   │   └── routes/
 │   │       └── index.ts      # API routes (includes /health)
-│   ├── package.json          # App dependencies and scripts
-│   ├── README-DEPLOYMENT.md  # deployment notes (this file)
+│   ├── package.json          # App dependencies and 
+│   ├── tsconfig.json 
+│   ├── package-lock.json
+│   ├── docker-compose.yaml  # docker compose file
+|   ├── Dockerfile  # docker compose file 
+|   └── README.md  # deployment notes (this file)
 |
 │
 ├── iac/    # CDKTF Infrastructure as Code
@@ -31,16 +35,14 @@ Complete Infrastructure-as-Code setup for deploying a **TypeScript Express appli
 │   ├── package.json          # IaC dependencies and scripts (build, deploy)
 │   ├── tsconfig.json         # TypeScript config for IaC
 │   ├── .env.example          # IaC environment template
-│   ├── README.md             # Infrastructure docs and usage
+│   └── README.md             # Infrastructure docs and usage
 │
 │── .github/
 │    └── workflows/
 │        └── iac-deploy.yml    # GitHub Actions workflow for app CI/CD
 |        └── app-deploy.yml    # GitHub Actions workflow for app CI/CD  
 │
-└── devbox/ & root devbox files
-  ├── devbox.json           # devbox configuration
-  └── devbox.lock           # devbox lockfile
+└── devbox.json
 ```
 
 ## 🚀 Quick Start

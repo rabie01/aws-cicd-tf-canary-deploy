@@ -6,13 +6,18 @@ on:
       - main
     paths:
       - 'app/**'
-  workflow_dispatch:  # manual trigger
+      - '!app/README.md'
+      - '!app/.gitignore'         
 
   pull_request:
     branches:
       - main
     paths:
       - 'app/**'
+      - '!app/README.md'
+      - '!app/.gitignore'    
+           
+  workflow_dispatch:  # manual trigger
 
 env:
   AWS_REGION: us-east-2
