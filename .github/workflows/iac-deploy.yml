@@ -1,4 +1,4 @@
-name: Deploy IaC (manual)
+name: Deploy IaC
 on:
   workflow_dispatch:
     inputs:
