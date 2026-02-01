@@ -1,4 +1,4 @@
-name: Build, Push to ECR, and Deploy
+name: Deploy the App
 
 on:
   push:
