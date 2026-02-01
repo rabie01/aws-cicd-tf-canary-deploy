@@ -17,6 +17,7 @@ on:
         
 jobs:
   plan:
+    if: ${{ github.event.inputs.environment == 'production' }}  # only run plan for production
     runs-on: ubuntu-latest
 
     steps:
