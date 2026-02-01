@@ -1,87 +1,295 @@
-# CDKTF Infrastructure Setup
+# TurboVets – Dockerized Node.js Express App on AWS ECS
 
-## Prerequisites
+[![IaC Deploy](https://github.com/rabie01/aws-cicd-cdktf/actions/workflows/iac-deploy.yml/badge.svg)](https://github.com/rabie01/aws-cicd-cdktf/actions/workflows/iac-deploy.yml)
 
-1. Install dependencies:
-# IaC (CDKTF) — TurboVets
+Complete Infrastructure-as-Code setup for deploying a **TypeScript Express application** using **Docker**, **CDKTF**, and **AWS ECS Fargate** with an **Application Load Balancer**.
 
-This folder contains the CDK for Terraform (CDKTF) TypeScript project that defines the AWS infrastructure for the TurboVets application.
+## 📋 Project Structure
 
-## Prerequisites
-
-1. Node.js and npm installed
-2. AWS CLI configured with credentials or environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`)
-3. `cdktf` CLI available (installed globally or via npm scripts)
-4. Environment
-
-Copy `.env.example` to `.env` and update values before planning/deploying:
-
-```bash
-cp .env.example .env
-# Edit .env: set AWS_ACCOUNT_ID, AWS_REGION, APP_NAME, etc.
+```
+.
+├── app/    # Application code and app-level config
+│   ├── src/
+│   │   ├── app.ts            # Express app configuration
+│   │   ├── server.ts         # Server entry point
+│   │   └── routes/
+│   │       └── index.ts      # API routes (includes /health)
+│   ├── package.json          # App dependencies and scripts
+│   ├── README-DEPLOYMENT.md  # deployment notes (this file)
+|
+│
+├── iac/    # CDKTF Infrastructure as Code
+│   ├── src/
+│   │   ├── main.ts           # CDKTF entry point
+│   │   ├── config.ts         # Loads .env and config
+│   │   ├── vpc-stack.ts      # VPC, subnets, NAT, route tables
+│   │   ├── ecr-stack.ts      # ECR repo and lifecycle policy
+│   │   ├── iam-stack.ts      # IAM roles (task/execution)
+│   │   └── ecs-stack.ts      # ECS cluster, service, ALB
+│   ├── cdktf.json            # CDKTF config (app entry, providers)
+│   ├── package.json          # IaC dependencies and scripts (build, deploy)
+│   ├── tsconfig.json         # TypeScript config for IaC
+│   ├── .env.example          # IaC environment template
+│   ├── README.md             # Infrastructure docs and usage
+│
+│── .github/
+│    └── workflows/
+│        └── iac-deploy.yml    # GitHub Actions workflow for app CI/CD
+|        └── app-deploy.yml    # GitHub Actions workflow for app CI/CD  
+│
+└── devbox/ & root devbox files
+  ├── devbox.json           # devbox configuration
+  └── devbox.lock           # devbox lockfile
 ```
 
-Mandatory variables (examples are in `.env.example`):
-- `AWS_ACCOUNT_ID`
+## 🚀 Quick Start
 
-## Quickstart
+### 1. Local Development with Docker
 
 ```bash
-# from repo root
+# Build and run locally
+docker-compose up --build
+
+# Access the app
+curl http://localhost:3000
+curl http://localhost:3000/health
+```
+
+### 2. Deploy to AWS ECS (from local machine)
+
+#### Prerequisites
+- AWS account with credentials configured()
+- CDKTF and Node.js installed(done using devbox shell)
+
+#### Step 1: Prepare Infrastructure Configuration
+
+```bash
+#clone the repo and run devbox to get all the requirements
+git clone https://github.com/rabie01/aws-cicd-cdktf.git
+devbox shell
+
+# Create environment file
 cd iac
+cp .env.example .env
+
+# Edit .env with your values
+vi .env
+# configure aws
+aws configure
+```
+
+**Required `.env` values:**
+```env
+BUCKET_NAME=abcdef        # Your s3 bucket name for the state file
+```
+
+#### Step 2: Deploy Infrastructure
+
+```bash
+# Install dependencies
 npm install
 
-# fetch providers and generated bindings
-npx cdktf get
-
-# build compiled JS into dist/
+# Build TypeScript
 npm run build
 
-# review plan
+# Review changes
 npm run plan
 
-# deploy (or use --auto-approve)
+# Deploy infrastructure (VPC, ECR, ECS, IAM)
 npm run deploy
+```
 
-# destroy when needed
+This creates:
+- ✅ VPC with public/private subnets across 2 AZs
+- ✅ Security groups with least privilege
+- ✅ ECR repository for Docker images
+- ✅ ECS Fargate cluster with auto-scaling
+- ✅ Application Load Balancer with health checks
+- ✅ CloudWatch Logs integration
+- ✅ IAM roles with minimal permissions
+
+#### Step 3: Build and Push Docker Image
+
+```bash
+# Get AWS account ID and region
+aws sts get-caller-identity
+export AWS_ACCOUNT_ID=<your-account-id>
+export AWS_REGION=us-east-1
+
+# Get ECR login token
+aws ecr get-login-password --region $AWS_REGION | \
+  docker login --username AWS --password-stdin \
+  $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+# Build using Dockerfile (production-ready)
+docker build -f Dockerfile -t turbovets:latest .
+
+# Tag for ECR
+docker tag turbovets:latest \
+  $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/turbovets-app:latest
+
+# Push to ECR
+docker push \
+  $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/turbovets-app:latest
+```
+
+#### Step 4: Verify Deployment
+
+```bash
+# Check cluster status
+aws ecs describe-clusters --clusters turbovets-cluster
+
+# Check service status
+aws ecs describe-services \
+  --cluster turbovets-cluster \
+  --services turbovets-service
+
+# Get ALB DNS name
+aws elbv2 describe-load-balancers \
+  --query 'LoadBalancers[0].DNSName' --output text
+
+# Test the application
+curl http://<ALB_DNS_NAME>
+curl http://<ALB_DNS_NAME>/health
+```
+
+
+## 🔄 CI/CD with GitHub Actions
+#### Prerequisites
+- AWS account credentials configured on GitHub secret
+- create production environment and add approvers(for deploy and destroy)
+
+The `.github/workflows/app-deploy.yml` pipeline:
+
+1. **On Pull Request**: Tests Docker build
+2. **On Push to main**: 
+   - Builds Docker image
+   - Pushes to ECR
+   - Updates ECS service
+   - Waits for service to stabilize
+  
+The `.github/workflows/iac-deploy.yml` pipeline:
+   Triggered manually to deploy all the infrastructure on aws
+
+
+### Setup GitHub Actions Secrets
+
+Add to your GitHub repository:
+
+```
+Settings → Secrets and variables → Actions
+```
+
+Add:
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+
+```bash
+# Or use GitHub CLI
+gh secret set AWS_ACCESS_KEY_ID --body $YOUR_KEY_ID
+gh secret set AWS_SECRET_ACCESS_KEY --body $YOUR_SECRET_KEY
+```
+
+## 📝 Environment Variables
+
+### Application (.env for app runtime)
+```env
+PORT=3000
+```
+
+### Infrastructure (iac/.env)
+```env
+AWS_REGION=us-east-1
+APP_NAME=turbovets
+ENVIRONMENT=production
+ECS_DESIRED_COUNT=2
+CONTAINER_CPU=256
+CONTAINER_MEMORY=512
+```
+
+
+## 🛠 Advanced Usage
+
+### Scaling Policies
+
+Auto-scaling is configured for:
+- **CPU**: Scale out at 70%, scale in at 30%
+- **Memory**: Scale out at 80%, scale in at 40%
+- **Min/Max**: 2-4 tasks
+
+### Updating Configuration
+
+To change settings post-deployment:
+
+```bash
+# Edit .env in iac/
+# Rerun workflow
+```
+
+### Destroying Infrastructure
+
+```bash
+cd iac
 npm run destroy
 ```
 
-## What this project creates
+## 📚 Architecture Diagram
 
-- VPC with public and private subnets (multi-AZ)
-- NAT Gateways and Internet Gateway
-- Route tables and associations
-- ECR repository for app images
-- IAM roles for ECS task execution and task role
-- ECS Fargate cluster, service, task definition
-- Application Load Balancer with target group and health checks
-
-## Notes about local artifacts
-
-If you want to tear down remote AWS resources, run `npm run destroy` before deleting local state files.
-
-## Docker image build & push (app)
-
-Build and push the application image from the `app/` folder (repo root move):
-
-```bash
-# from repo root
-cd app
-npm run build   # if your app has a build step
-
-# build docker image (adjust tags as needed)
-docker build -t turbovets:latest .
-
-# tag and push to ECR (replace ACCOUNT_ID and REGION)
-aws ecr get-login-password --region <REGION> | docker login --username AWS --password-stdin <ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com
-docker tag turbovets:latest <ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/turbovets-app:latest
-docker push <ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/turbovets-app:latest
 ```
+┌─────────────────────────────────────────────────────────────┐
+│                     AWS Region                              │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │  VPC (10.0.0.0/16)                                   │  │
+│  │                                                       │  │
+│  │  ┌─────────────────────────────────────────────┐   │  │
+│  │  │ Public Subnets (ALB)                        │   │  │
+│  │  │ ┌──────────────────────────────────────┐   │   │  │
+│  │  │ │ Application Load Balancer (port 80) │   │   │  │
+│  │  │ │ Health Check: /health               │   │   │  │
+│  │  │ └──────────────┬───────────────────────┘   │   │  │
+│  │  │                │                            │   │  │
+│  │  │  IGW ←─────────┘                            │   │  │
+│  │  └────────────────┼────────────────────────────┘   │  │
+│  │                   │                                 │  │
+│  │  ┌────────────────▼────────────────────────────┐   │  │
+│  │  │ Private Subnets (ECS Tasks)                │   │  │
+│  │  │ ┌──────────────────────────────────────┐   │   │  │
+│  │  │ │ ECS Fargate Task 1 (port 3000)       │   │   │  │
+│  │  │ │ ├─ Express App                       │   │   │  │
+│  │  │ │ └─ CloudWatch Logs                   │   │   │  │
+│  │  │ └──────────────────────────────────────┘   │   │  │
+│  │  │ ┌──────────────────────────────────────┐   │   │  │
+│  │  │ │ ECS Fargate Task 2 (port 3000)       │   │   │  │
+│  │  │ │ ├─ Express App                       │   │   │  │
+│  │  │ │ └─ CloudWatch Logs                   │   │   │  │
+│  │  │ └──────────────────────────────────────┘   │   │  │
+│  │  │                                             │   │  │
+│  │  │  NAT Gateway → Internet                    │   │  │
+│  │  └─────────────────────────────────────────────┘   │  │
+│  │                                                       │  │
+│  └─────────────────────────────────────────────────────┘  │
+│                                                              │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ ECR Repository (turbovets-app)                       │  │
+│  │ └─ Image: Node.js 20-slim with compiled JS          │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                              │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ CloudWatch Logs (/ecs/turbovets)                    │  │
+│  │ └─ Retention: 7 days                                 │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
 
-After pushing the image, update the image tag in your task definition (if necessary) and run `npm run deploy` from `iac` to apply updates.
-
-
-## Outputs
-
-On successful deploy, CDKTF outputs common values (e.g., `ecr_repository_url`, `alb_dns_name`, `ecs_cluster_name`, `vpc_id`).
+┌──────────────────────────────┐
+│ GitHub Actions CI/CD Pipeline│
+├──────────────────────────────┤
+│ 1. Build the infrastructure  |
+|  2. Build Docker image       │
+│ 3. Push to ECR               │
+│ 4. Update ECS service        │
+│ 5. Wait for stabilization    |
+└──────────────────────────────┘
+```
