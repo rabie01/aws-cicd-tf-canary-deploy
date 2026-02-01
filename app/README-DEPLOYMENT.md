@@ -1,7 +1,6 @@
 # TurboVets – Dockerized Node.js Express App on AWS ECS
 
 [![App CI/CD](https://github.com/rabie01/aws-cicd-cdktf/actions/workflows/app-deploy.yml/badge.svg)](https://github.com/rabie01/aws-cicd-cdktf/actions/workflows/app-deploy.yml)
-[![IaC Deploy](https://github.com/rabie01/aws-cicd-cdktf/actions/workflows/iac-deploy.yml/badge.svg)](https://github.com/rabie01/aws-cicd-cdktf/actions/workflows/iac-deploy.yml)
 
 Complete Infrastructure-as-Code setup for deploying a **TypeScript Express application** using **Docker**, **CDKTF**, and **AWS ECS Fargate** with an **Application Load Balancer**.
 
@@ -16,7 +15,7 @@ Complete Infrastructure-as-Code setup for deploying a **TypeScript Express appli
 │   │   └── routes/
 │   │       └── index.ts      # API routes (includes /health)
 │   ├── package.json          # App dependencies and scripts
-│   ├── README-DEPLOYMENT.md  # App-specific deployment notes (this file)
+│   ├── README-DEPLOYMENT.md  # deployment notes (this file)
 |
 │
 ├── iac/    # CDKTF Infrastructure as Code
@@ -39,7 +38,6 @@ Complete Infrastructure-as-Code setup for deploying a **TypeScript Express appli
 |        └── app-deploy.yml    # GitHub Actions workflow for app CI/CD  
 │
 └── devbox/ & root devbox files
-  ├── .devbox/              # devbox local environment (optional)
   ├── devbox.json           # devbox configuration
   └── devbox.lock           # devbox lockfile
 ```
@@ -282,17 +280,16 @@ npm run destroy
 │  │ CloudWatch Logs (/ecs/turbovets)                    │  │
 │  │ └─ Retention: 7 days                                 │  │
 │  └──────────────────────────────────────────────────────┘  │
-│                                                              │
+│                                                             │
 └─────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────┐
-│ GitHub Actions CI/CD Pipeline │
+│ GitHub Actions CI/CD Pipeline│
 ├──────────────────────────────┤
-│ 1. Build the infrastructure
-  2. Build Docker image        │
+│ 1. Build the infrastructure  |
+|  2. Build Docker image       │
 │ 3. Push to ECR               │
 │ 4. Update ECS service        │
-│ 5. Wait for stabilization
-   
+│ 5. Wait for stabilization    |
 └──────────────────────────────┘
 ```
