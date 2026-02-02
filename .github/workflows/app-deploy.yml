@@ -20,7 +20,7 @@ on:
   workflow_dispatch:  # manual trigger
 
 env:
-  AWS_REGION: us-east-2
+  AWS_REGION: us-east-1
   ECS_TASK_FAMILY: turbovets-task
   ECR_REPO_NAME: turbovets-app
   ECS_SERVICE_NAME: turbovets-service
@@ -30,6 +30,7 @@ env:
 
 jobs:
   build-and-push:
+    needs: test
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     outputs:
@@ -50,17 +51,15 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build Docker image
-        id: docker-build
+      - name: Build & Push
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -f app/Dockerfile -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO_NAME }}:${{ github.sha }} app
-          docker tag ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO_NAME }}:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO_NAME }}:latest
-
-      - name: Push image to Amazon ECR
-        run: |
-          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO_NAME }}:${{ github.sha }}
-          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO_NAME }}:latest
-          echo "Image pushed: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO_NAME }}:${{ github.sha }}"
+          docker build -t $REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG -t $REGISTRY/$ECR_REPO_NAME:latest app
+          docker push $REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG 
+          docker push $REGISTRY/$ECR_REPO_NAME:latest
+          echo "Image pushed: $REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG"
 
       - name: Set image output
         id: image
@@ -79,23 +78,16 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Download current Task Definition
-        run: |
-          aws ecs describe-task-definition \
-            --task-definition ${{ env.ECS_TASK_FAMILY }} \
-            --region ${{ env.AWS_REGION }} \
-            --query taskDefinition > task-definition.json
-
       - name: Fill in the new image ID
         id: render-task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: task-definition.json
+          task-definition-family: ${{ env.ECS_TASK_FAMILY }}
           container-name: ${{ env.CONTAINER_NAME }}
           image: ${{ needs.build-and-push.outputs.image-uri }}
 
       - name: Roll out new task version
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
           task-definition: ${{ steps.render-task-def.outputs.task-definition }}
           service: ${{ env.ECS_SERVICE_NAME }}
@@ -104,7 +96,7 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    # if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
 
     steps:
       - name: Checkout code
@@ -114,6 +106,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm' # Speeds up subsequent runs
+          cache-dependency-path: app/package-lock.json
 
       - name: Install dependencies
         run: |
@@ -125,6 +119,10 @@ jobs:
 
       - name: Verify Docker image
         run: |
-          docker run --rm -p ${{ env.CONTAINER_PORT }}:${{ env.CONTAINER_PORT }} turbovets:test &
-          sleep 10
-          curl -f http://localhost:${{ env.CONTAINER_PORT }}/health || exit 1
+          # Run container in background
+          docker run -d --name test-container -p 3000:${{ env.CONTAINER_PORT }} turbovets:test
+          
+          # retry for 30 seconds
+          timeout 30s bash -c 'until curl -f http://localhost:3000/health; do sleep 1; done'
+          
+          docker stop test-container

@@ -1,4 +1,7 @@
 name: Deploy IaC
+defaults:
+  run:
+    working-directory: iac
 on:
   workflow_dispatch:
     inputs:
@@ -33,7 +36,7 @@ env:
         
 jobs:
   plan:
-    if: ${{ github.event.inputs.environment == 'production' && github.event.inputs.action == 'deploy' }}
+    if: ${{ github.event.inputs.environment == 'production' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -51,6 +54,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm' # Speeds up subsequent runs
+          cache-dependency-path: iac/package-lock.json
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -58,32 +63,22 @@ jobs:
             terraform_version: 1.14.4
 
       - name: Install & build (iac)
-        working-directory: iac
         run: |
           npm install
           npm run build
 
       - name: CDKTF get providers
-        working-directory: iac
         run: npx cdktf get
 
-      - name: CDKTF synth
-        working-directory: iac
-        run: npx cdktf synth
+      - name: Run the plan
+        run: npx cdktf diff 
 
-      - name: Generate plan JSON
-        working-directory: iac
-        run: npx cdktf diff --json > plan.json
-        
-      - name: Show plan in logs
-        working-directory: iac
-        run: cat plan.json
   
   deploy:
     needs: plan
     # This runs if the plan succeeded or skipped
     # if: ${{ always() && (needs.plan.result == 'success' || needs.plan.result == 'skipped') && github.event.inputs.action == 'deploy' }}
-    if: ${{ !failure() && !cancelled() && github.event.inputs.action == 'deploy' }}
+    if: ${{ !failure() && !cancelled() && github.event.inputs.action == 'deploy'}}
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
     env:
@@ -105,6 +100,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm' # Speeds up subsequent runs
+          cache-dependency-path: iac/package-lock.json
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -112,26 +109,17 @@ jobs:
             terraform_version: 1.14.4
 
       - name: Install & build (iac)
-        working-directory: iac
         run: |
           npm install
           npm run build
 
       - name: CDKTF get providers
-        working-directory: iac
         run: npx cdktf get
 
-      - name: CDKTF synth
-        working-directory: iac
-        run: npx cdktf synth
         
       - name: Deploy The Infrastructure
-        working-directory: iac
         run: npx cdktf deploy --auto-approve
-        
-      - name: Show outputs
-        working-directory: iac
-        run: npx cdktf output -json || true
+
 
   destroy:
     if: ${{ github.event.inputs.action == 'destroy' }}
@@ -151,6 +139,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm' # Speeds up subsequent runs
+          cache-dependency-path: iac/package-lock.json
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -158,21 +148,15 @@ jobs:
           terraform_version: 1.14.4
 
       - name: Install & build (iac)
-        working-directory: iac
         run: |
           npm install
           npm run build
 
+
       - name: CDKTF get providers
-        working-directory: iac
         run: npx cdktf get
 
-      - name: CDKTF synth
-        working-directory: iac
-        run: npx cdktf synth
-
-      - name: Destroy
-        working-directory: iac
+      - name: Destroy The Infrastructure
         run: npx cdktf destroy --auto-approve
   
     
