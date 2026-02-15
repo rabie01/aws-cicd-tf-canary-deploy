@@ -6,7 +6,11 @@ terraform {
   #   key    = "turbovets/prod/terraform.tfstate"
   #   region = "us-east-1"
   # }
-  backend "s3" {}
+
+  backend "s3" {
+    locke_file = true
+    encrypt    = true
+  }
 
   required_providers {
     aws = {

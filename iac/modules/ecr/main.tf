@@ -10,6 +10,10 @@ resource "aws_ecr_repository" "app" {
     scan_on_push = true
   }
 
+  lifecycle {
+    prevent_destroy = false  # set true to protect from accidental deletion
+  }
+
   tags = {
     Name        = "${var.app_name}-${var.environment}"
     Environment = var.environment

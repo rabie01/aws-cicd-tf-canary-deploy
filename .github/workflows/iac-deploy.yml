@@ -1,4 +1,4 @@
-name: Deploy IaC
+name: Deploy IaC - HCL
 defaults:
   run:
     working-directory: iac
@@ -20,9 +20,10 @@ on:
       action:
         description: 'Action to perform'
         required: true
-        default: deploy
+        default: plan
         type: choice
         options:
+          - plan
           - deploy
           - destroy
       bucket_name:
@@ -33,10 +34,11 @@ on:
 env:
   AWS_REGION: ${{ github.event.inputs.aws_region || 'us-east-1' }}
   BUCKET_NAME: ${{ github.event.inputs.bucket_name }}
-        
+  TF_VERSION: 1.5.0
+
 jobs:
   plan:
-    if: ${{ github.event.inputs.environment == 'production' }}
+    if: ${{ github.event.inputs.environment == 'production' || github.event.inputs.action == 'plan' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -50,40 +52,32 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm' # Speeds up subsequent runs
-          cache-dependency-path: iac/package-lock.json
-
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-            terraform_version: 1.14.4
+          terraform_version: ${{ env.TF_VERSION }}
 
-      - name: Install & build (iac)
+      - name: Terraform Init
         run: |
-          npm install
-          npm run build
+          terraform init \
+            -backend-config="bucket=${{ env.BUCKET_NAME }}" \
+            -backend-config="key=turbovets/${{ github.event.inputs.environment }}/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}"
 
-      - name: CDKTF get providers
-        run: npx cdktf get
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
 
-      - name: Run the plan
-        run: npx cdktf diff 
+      - name: Terraform Validate
+        run: terraform validate
 
-  
+      - name: Terraform Plan
+        run: terraform plan -var-file="${{ github.event.inputs.environment }}.tfvars"
+
   deploy:
     needs: plan
-    # This runs if the plan succeeded or skipped
-    # if: ${{ always() && (needs.plan.result == 'success' || needs.plan.result == 'skipped') && github.event.inputs.action == 'deploy' }}
     if: ${{ !failure() && !cancelled() && github.event.inputs.action == 'deploy'}}
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
-    env:
-      CI: 'true'
-      TERM: xterm-256color
 
     steps:
       - name: Checkout code
@@ -96,37 +90,28 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm' # Speeds up subsequent runs
-          cache-dependency-path: iac/package-lock.json
-
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-            terraform_version: 1.14.4
+          terraform_version: ${{ env.TF_VERSION }}
 
-      - name: Install & build (iac)
+      - name: Terraform Init
         run: |
-          npm install
-          npm run build
+          terraform init \
+            -backend-config="bucket=${{ env.BUCKET_NAME }}" \
+            -backend-config="key=turbovets/${{ github.event.inputs.environment }}/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}"
 
-      - name: CDKTF get providers
-        run: npx cdktf get
-
-        
       - name: Deploy The Infrastructure
-        run: npx cdktf deploy --auto-approve
-
+        run: terraform apply -var-file="${{ github.event.inputs.environment }}.tfvars" -auto-approve
 
   destroy:
     if: ${{ github.event.inputs.action == 'destroy' }}
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -135,28 +120,17 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm' # Speeds up subsequent runs
-          cache-dependency-path: iac/package-lock.json
-
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.14.4
+          terraform_version: ${{ env.TF_VERSION }}
 
-      - name: Install & build (iac)
+      - name: Terraform Init
         run: |
-          npm install
-          npm run build
-
-
-      - name: CDKTF get providers
-        run: npx cdktf get
+          terraform init \
+            -backend-config="bucket=${{ env.BUCKET_NAME }}" \
+            -backend-config="key=turbovets/${{ github.event.inputs.environment }}/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}"
 
       - name: Destroy The Infrastructure
-        run: npx cdktf destroy --auto-approve
-  
-    
+        run: terraform destroy -var-file="${{ github.event.inputs.environment }}.tfvars" -auto-approve
