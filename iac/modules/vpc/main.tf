@@ -26,95 +26,52 @@ resource "aws_internet_gateway" "main" {
 }
 
 # Public Subnets
-resource "aws_subnet" "public_1" {
+resource "aws_subnet" "public" {
+  count                   = var.az_count
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = var.public_subnet_1_cidr
-  availability_zone       = data.aws_availability_zones.available.names[0]
+  cidr_block              = cidrsubnet(var.vpc_cidr, 8, count.index + 100)
+  availability_zone       = data.aws_availability_zones.available.names[count.index]
   map_public_ip_on_launch = true
 
   tags = {
-    Name        = "${var.app_name}-public-subnet-1"
-    Environment = var.environment
-  }
-}
-
-resource "aws_subnet" "public_2" {
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = var.public_subnet_2_cidr
-  availability_zone = data.aws_availability_zones.available.names[1]
-  map_public_ip_on_launch = true
-
-  tags = {
-    Name        = "${var.app_name}-public-subnet-2"
+    Name        = "${var.app_name}-public-subnet-${count.index + 1}"
     Environment = var.environment
   }
 }
 
 # Private Subnets
-resource "aws_subnet" "private_1" {
+resource "aws_subnet" "private" {
+  count             = var.az_count
   vpc_id            = aws_vpc.main.id
-  cidr_block        = var.private_subnet_1_cidr
-  availability_zone = data.aws_availability_zones.available.names[0]
+  cidr_block        = cidrsubnet(var.vpc_cidr, 8, count.index)
+  availability_zone = data.aws_availability_zones.available.names[count.index]
 
   tags = {
-    Name        = "${var.app_name}-private-subnet-1"
+    Name        = "${var.app_name}-private-subnet-${count.index + 1}"
     Environment = var.environment
   }
 }
-
-resource "aws_subnet" "private_2" {
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = var.private_subnet_2_cidr
-  availability_zone = data.aws_availability_zones.available.names[1]
-
-  tags = {
-    Name        = "${var.app_name}-private-subnet-2"
-    Environment = var.environment
-  }
-}
-
 # Elastic IPs for NAT
-resource "aws_eip" "nat_1" {
-  domain   = "vpc"
+resource "aws_eip" "nat" {
+  count   = var.az_count
+  domain  = "vpc"
 
   depends_on = [aws_internet_gateway.main]
 
   tags = {
-    Name        = "${var.app_name}-eip-1"
-    Environment = var.environment
-  }
-}
-
-resource "aws_eip" "nat_2" {
-  domain   = "vpc"
-
-  depends_on = [aws_internet_gateway.main]
-
-  tags = {
-    Name        = "${var.app_name}-eip-2"
+    Name        = "${var.app_name}-eip-${count.index + 1}"
     Environment = var.environment
   }
 }
 
 # NAT Gateways
-resource "aws_nat_gateway" "nat_1" {
-  allocation_id = aws_eip.nat_1.id
-  subnet_id     = aws_subnet.public_1.id
+resource "aws_nat_gateway" "nat" {
+  count = var.az_count
+  allocation_id = aws_eip.nat[count.index].id
+  subnet_id     = aws_subnet.public[count.index].id
 
   tags = {
-    Name        = "${var.app_name}-nat-gw-1"
-    Environment = var.environment
-  }
-
-  depends_on = [aws_internet_gateway.main]
-}
-
-resource "aws_nat_gateway" "nat_2" {
-  allocation_id = aws_eip.nat_2.id
-  subnet_id     = aws_subnet.public_2.id
-
-  tags = {
-    Name        = "${var.app_name}-nat-gw-2"
+    Name        = "${var.app_name}-nat-gw-${count.index + 1}"
     Environment = var.environment
   }
 
@@ -137,55 +94,34 @@ resource "aws_route" "public_internet" {
   gateway_id             = aws_internet_gateway.main.id
 }
 
-resource "aws_route_table_association" "public_1" {
-  subnet_id      = aws_subnet.public_1.id
-  route_table_id = aws_route_table.public.id
-}
-
-resource "aws_route_table_association" "public_2" {
-  subnet_id      = aws_subnet.public_2.id
+resource "aws_route_table_association" "public" {
+  count = var.az_count
+  subnet_id      = aws_subnet.public[count.index].id
   route_table_id = aws_route_table.public.id
 }
 
 # Private Route Tables
-resource "aws_route_table" "private_1" {
+resource "aws_route_table" "private" {
+  count  = var.az_count
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name        = "${var.app_name}-private-rt-1"
+    Name        = "${var.app_name}-private-rt-${count.index + 1}"
     Environment = var.environment
   }
 }
 
-resource "aws_route" "private_1_nat" {
-  route_table_id         = aws_route_table.private_1.id
+resource "aws_route" "private_nat" {
+  count = var.az_count
+  route_table_id         = aws_route_table.private[count.index].id
   destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = aws_nat_gateway.nat_1.id
+  nat_gateway_id         = aws_nat_gateway.nat[count.index].id
 }
 
-resource "aws_route_table_association" "private_1" {
-  subnet_id      = aws_subnet.private_1.id
-  route_table_id = aws_route_table.private_1.id
-}
-
-resource "aws_route_table" "private_2" {
-  vpc_id = aws_vpc.main.id
-
-  tags = {
-    Name        = "${var.app_name}-private-rt-2"
-    Environment = var.environment
-  }
-}
-
-resource "aws_route" "private_2_nat" {
-  route_table_id         = aws_route_table.private_2.id
-  destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = aws_nat_gateway.nat_2.id
-}
-
-resource "aws_route_table_association" "private_2" {
-  subnet_id      = aws_subnet.private_2.id
-  route_table_id = aws_route_table.private_2.id
+resource "aws_route_table_association" "private" {
+  count = var.az_count
+  subnet_id      = aws_subnet.private[count.index].id
+  route_table_id = aws_route_table.private[count.index].id
 }
 
 # ALB Security Group

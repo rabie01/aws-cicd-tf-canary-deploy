@@ -15,28 +15,13 @@ variable "vpc_cidr" {
   description = "VPC CIDR block"
 }
 
-variable "public_subnet_1_cidr" {
-  type        = string
-  description = "Public subnet 1 CIDR"
-}
-
-variable "public_subnet_2_cidr" {
-  type        = string
-  description = "Public subnet 2 CIDR"
-}
-
-variable "private_subnet_1_cidr" {
-  type        = string
-  description = "Private subnet 1 CIDR"
-}
-
-variable "private_subnet_2_cidr" {
-  type        = string
-  description = "Private subnet 2 CIDR"
-}
-
 # ECS
 variable "ecs_container_port" {
   type        = number
   description = "ECS container port for security group"
+}
+
+variable "az_count" { 
+  type        = number
+  description = "Number of Availability Zones to use"
 }

@@ -5,10 +5,7 @@ module "vpc" {
   app_name              = var.app_name
   environment           = var.environment
   vpc_cidr              = var.vpc_cidr
-  public_subnet_1_cidr  = var.public_subnet_1_cidr
-  public_subnet_2_cidr  = var.public_subnet_2_cidr
-  private_subnet_1_cidr = var.private_subnet_1_cidr
-  private_subnet_2_cidr = var.private_subnet_2_cidr
+  az_count              = var.az_count
   ecs_container_port    = var.ecs_container_port
 }
 

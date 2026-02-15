@@ -5,6 +5,12 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
+variable "az_count" { 
+  type        = number
+  description = "Number of Availability Zones to use"
+  default     = 2
+}
+
 # App
 variable "app_name" {
   type        = string
@@ -29,28 +35,7 @@ variable "vpc_cidr" {
   description = "CIDR block for the VPC"
   default = "10.0.0.0/16"
   }
-
-variable "public_subnet_1_cidr" { 
-  type = string 
-  description = "CIDR block for the first public subnet"
-  default = "10.0.101.0/24"
-  }
-
-variable "public_subnet_2_cidr" { 
-  type = string
-  description = "CIDR block for the second public subnet"
-  default = "10.0.102.0/24"
-  }
-variable "private_subnet_1_cidr" { 
-  type = string
-  description = "CIDR block for the first private subnet"
-  default = "10.0.1.0/24"
-  }
-variable "private_subnet_2_cidr" { 
-  type = string
-  description = "CIDR block for the second private subnet"
-  default = "10.0.2.0/24"
-  }
+  
 variable "ecs_cluster_name" { 
   type = string
   description = "ECS cluster name"

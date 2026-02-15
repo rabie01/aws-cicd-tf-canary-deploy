@@ -3,17 +3,11 @@ output "vpc_id" {
 }
 
 output "public_subnets" {
-  value = [
-    module.vpc.public_subnet_1_id,
-    module.vpc.public_subnet_2_id
-  ]
+  value = module.vpc.public_subnet_ids
 }
 
 output "private_subnets" {
-  value = [
-    module.vpc.private_subnet_1_id,
-    module.vpc.private_subnet_2_id
-  ]
+  value = module.vpc.private_subnet_ids
 }
 
 output "ecs_security_group_id" {
