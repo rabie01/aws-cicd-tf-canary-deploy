@@ -17,3 +17,7 @@ output "ecs_security_group_id" {
 output "alb_security_group_id" {
   value = module.vpc.alb_security_group_id
 }
+
+output "alb_dns_name" {
+  value = module.ecs.alb_dns_name
+}

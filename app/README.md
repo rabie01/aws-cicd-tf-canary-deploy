@@ -1,6 +1,6 @@
 # TurboVets – Dockerized Node.js Express App on AWS ECS
 
-[![App CI/CD](https://github.com/rabie01/aws-cicd-cdktf/actions/workflows/app-deploy.yml/badge.svg)](https://github.com/rabie01/aws-cicd-cdktf/actions/workflows/app-deploy.yml)
+[![App CI/CD](https://github.com/rabie01/aws-cicd-cdktf/actions/workflows/app-deploy.yml/badge.svg?branch=hcl)](https://github.com/rabie01/aws-cicd-cdktf/actions/workflows/app-deploy.yml)
 
 Complete Infrastructure-as-Code setup for deploying a **TypeScript Express application** using **Docker**, **CDKTF**, and **AWS ECS Fargate** with an **Application Load Balancer**.
 
@@ -22,19 +22,37 @@ Complete Infrastructure-as-Code setup for deploying a **TypeScript Express appli
 |   └── README.md  # deployment notes (this file)
 |
 │
-├── iac/    # CDKTF Infrastructure as Code
-│   ├── src/
-│   │   ├── main.ts           # CDKTF entry point
-│   │   ├── config.ts         # Loads .env and config
-│   │   ├── vpc-stack.ts      # VPC, subnets, NAT, route tables
-│   │   ├── ecr-stack.ts      # ECR repo and lifecycle policy
-│   │   ├── iam-stack.ts      # IAM roles (task/execution)
-│   │   └── ecs-stack.ts      # ECS cluster, service, ALB
-│   ├── cdktf.json            # CDKTF config (app entry, providers)
-│   ├── package.json          # IaC dependencies and scripts (build, deploy)
-│   ├── tsconfig.json         # TypeScript config for IaC
-│   ├── .env.example          # IaC environment template
-│   └── README.md             # Infrastructure docs and usage
+iac/                          # Terraform Infrastructure as Code
+├── modules/                 # Reusable Terraform modules
+│   ├── vpc/
+│   │   ├── main.tf          # VPC, subnets, NAT, route tables, security groups
+│   │   ├── outputs.tf       # VPC module outputs
+│   │   └── variables.tf     # VPC module variables
+│   ├── ecr/
+│   │   ├── main.tf          # ECR repository and lifecycle policy
+│   │   ├── outputs.tf       # ECR module outputs
+│   │   └── variables.tf     # ECR module variables
+│   ├── iam/
+│   │   ├── main.tf          # IAM roles (task execution & task roles)
+│   │   ├── outputs.tf       # IAM module outputs
+│   │   └── variables.tf     # IAM module variables
+│   └── ecs/
+│       ├── main.tf          # ECS cluster, service, task definition, ALB
+│       ├── outputs.tf       # ECS module outputs
+│       └── variables.tf     # ECS module variables
+├── main.tf                  # Root module - module instantiation
+├── terraform.tf             # Terraform config (version, providers, backend)
+├── variables.tf             # Root module variables (defaults)
+├── outputs.tf               # Root module outputs
+├── development.tfvars       # Development environment variables
+├── production.tfvars        # Production environment variables
+├── backend-dev.hcl          # S3 backend config for development
+├── backend-prod.hcl         # S3 backend config for production
+├── .terraform.lock.hcl      # Terraform dependency lock file
+├── terraform.tfstate        # Current state
+├── terraform.tfstate.backup # State backup
+├── .gitignore               # Git ignore for IaC
+└── README.md                # Infrastructure documentation
 │
 │── .github/
 │    └── workflows/
@@ -60,46 +78,71 @@ curl http://localhost:3000/health
 ### 2. Deploy to AWS ECS (from local machine)
 
 #### Prerequisites
-- AWS account with credentials configured()
-- CDKTF and Node.js installed(done using devbox shell)
+- AWS Account with appropriate permissions
+- AWS CLI configured
+- Terraform >= 1.5.0
+- Git
 
-#### Step 1: Prepare Infrastructure Configuration
+### 1. Environment Variables
+
+Copy and configure your environment:
 
 ```bash
-#clone the repo and run devbox to get all the requirements
-git clone https://github.com/rabie01/aws-cicd-cdktf.git
-devbox shell
+# For development
+cp <your development>.tfvars development.tfvars
+# For production
+cp <your production>.tfvars production.tfvars
+```
 
-# Create environment file
+### 2. S3 Backend Setup (One-time)
+
+Create S3 bucket:
+
+```bash
+# Create S3 bucket
+aws s3api create-bucket \
+  --bucket turbovets-tfstate-prod \
+  --region us-east-1
+
+# Enable versioning
+aws s3api put-bucket-versioning \
+  --bucket turbovets-tfstate-prod \
+  --versioning-configuration Status=Enabled
+```
+
+### 3. Initialize Terraform
+
+```bash
 cd iac
-cp .env.example .env
 
-# Edit .env with your values
-vi .env
-# configure aws
-aws configure
+# Development
+terraform init -backend-config=backend-dev.hcl
+
+# Production
+terraform init -backend-config=backend-prod.hcl
 ```
 
-**Required `.env` values:**
-```env
-BUCKET_NAME=abcdef        # Your s3 bucket name for the state file
-```
-
-#### Step 2: Deploy Infrastructure
+### 4. Plan Infrastructure
 
 ```bash
-# Install dependencies
-npm install
+# Development
+terraform plan -var-file=development.tfvars
 
-# Build TypeScript
-npm run build
-
-# Review changes
-npm run plan
-
-# Deploy infrastructure (VPC, ECR, ECS, IAM)
-npm run deploy
+# Production
+terraform plan -var-file=production.tfvars
 ```
+
+### 5. Apply Infrastructure
+
+```bash
+# Development
+terraform apply -var-file=development.tfvars
+
+# Production
+terraform apply -var-file=production.tfvars
+```
+
+---
 
 This creates:
 - ✅ VPC with public/private subnets across 2 AZs
