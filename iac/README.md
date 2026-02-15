@@ -1,6 +1,6 @@
 # TurboVets – Dockerized Node.js Express App on AWS ECS
 
-[![IaC Deploy](https://github.com/rabie01/aws-cicd-cdktf/actions/workflows/iac-deploy.yml/badge.svg)](https://github.com/rabie01/aws-cicd-cdktf/actions/workflows/iac-deploy.yml)
+[![Deploy IaC](https://github.com/rabie01/aws-cicd-cdktf/actions/workflows/iac-deploy.yml/badge.svg?branch=hcl)](https://github.com/rabie01/aws-cicd-cdktf/actions/workflows/iac-deploy.yml)
 
 Complete Infrastructure-as-Code setup for deploying a **TypeScript Express application** using **Docker**, **CDKTF**, and **AWS ECS Fargate** with an **Application Load Balancer**.
 
