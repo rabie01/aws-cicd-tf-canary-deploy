@@ -1,8 +1,4 @@
 devbox.lock
 .devbox/
 .qodo
-.terraform/
-.terraform.lock.hcl
-*.tfstate
-*.tfstate.backup
-modules/
+
