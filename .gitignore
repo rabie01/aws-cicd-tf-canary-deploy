@@ -5,3 +5,4 @@ devbox.lock
 .terraform.lock.hcl
 *.tfstate
 *.tfstate.backup
+modules/
