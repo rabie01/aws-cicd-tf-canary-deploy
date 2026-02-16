@@ -3,7 +3,7 @@ name: Deploy the App
 on:
   push:
     branches:
-      - main
+      - hcl
     paths:
       - 'app/**'
       - '!app/README.md'
@@ -11,7 +11,7 @@ on:
 
   pull_request:
     branches:
-      - main
+      - hcl
     paths:
       - 'app/**'
       - '!app/README.md'
@@ -32,7 +32,7 @@ jobs:
   build-and-push:
     needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/hcl')
     outputs:
       image-uri: ${{ steps.image.outputs.image }}
 
@@ -68,7 +68,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build-and-push
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/hcl')
 
     steps:
       - name: Configure AWS credentials
@@ -96,7 +96,7 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    # if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    # if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/hcl')
 
     steps:
       - name: Checkout code

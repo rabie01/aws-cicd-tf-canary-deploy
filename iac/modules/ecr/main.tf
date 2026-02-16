@@ -3,7 +3,7 @@
 ########################################
 
 resource "aws_ecr_repository" "app" {
-  name                 = "${var.app_name}-${var.environment}"
+  name                 = "${var.app_name}-app"
   image_tag_mutability = "IMMUTABLE"
 
   image_scanning_configuration {
@@ -15,7 +15,7 @@ resource "aws_ecr_repository" "app" {
   }
 
   tags = {
-    Name        = "${var.app_name}-${var.environment}"
+    Name        = "${var.app_name}-app"
     Environment = var.environment
   }
 }
