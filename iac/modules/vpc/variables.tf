@@ -21,7 +21,7 @@ variable "ecs_container_port" {
   description = "ECS container port for security group"
 }
 
-variable "az_count" { 
+variable "az_count" {
   type        = number
   description = "Number of Availability Zones to use"
 }

@@ -53,8 +53,8 @@ resource "aws_subnet" "private" {
 }
 # Elastic IPs for NAT
 resource "aws_eip" "nat" {
-  count   = var.az_count
-  domain  = "vpc"
+  count  = var.az_count
+  domain = "vpc"
 
   depends_on = [aws_internet_gateway.main]
 
@@ -66,7 +66,7 @@ resource "aws_eip" "nat" {
 
 # NAT Gateways
 resource "aws_nat_gateway" "nat" {
-  count = var.az_count
+  count         = var.az_count
   allocation_id = aws_eip.nat[count.index].id
   subnet_id     = aws_subnet.public[count.index].id
 
@@ -95,7 +95,7 @@ resource "aws_route" "public_internet" {
 }
 
 resource "aws_route_table_association" "public" {
-  count = var.az_count
+  count          = var.az_count
   subnet_id      = aws_subnet.public[count.index].id
   route_table_id = aws_route_table.public.id
 }
@@ -112,30 +112,30 @@ resource "aws_route_table" "private" {
 }
 
 resource "aws_route" "private_nat" {
-  count = var.az_count
+  count                  = var.az_count
   route_table_id         = aws_route_table.private[count.index].id
   destination_cidr_block = "0.0.0.0/0"
   nat_gateway_id         = aws_nat_gateway.nat[count.index].id
 }
 
 resource "aws_route_table_association" "private" {
-  count = var.az_count
+  count          = var.az_count
   subnet_id      = aws_subnet.private[count.index].id
   route_table_id = aws_route_table.private[count.index].id
 }
 
 # ALB Security Group
 resource "aws_security_group" "alb" {
-  name  = "${var.app_name}-alb-sg"
+  name   = "${var.app_name}-alb-sg"
   vpc_id = aws_vpc.main.id
 
   ingress = [
-    { from_port = 80,  to_port = 80,  protocol = "tcp", cidr_blocks = ["0.0.0.0/0"], description = "HTTP", ipv6_cidr_blocks = [], prefix_list_ids  = [], security_groups  = [], self = false },
-    { from_port = 443, to_port = 443, protocol = "tcp", cidr_blocks = ["0.0.0.0/0"], description = "HTTPS", ipv6_cidr_blocks = [], prefix_list_ids  = [], security_groups  = [] , self = false },
+    { from_port = 80, to_port = 80, protocol = "tcp", cidr_blocks = ["0.0.0.0/0"], description = "HTTP", ipv6_cidr_blocks = [], prefix_list_ids = [], security_groups = [], self = false },
+    { from_port = 443, to_port = 443, protocol = "tcp", cidr_blocks = ["0.0.0.0/0"], description = "HTTPS", ipv6_cidr_blocks = [], prefix_list_ids = [], security_groups = [], self = false },
   ]
 
   egress = [
-    { from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"], description = "All outbound", ipv6_cidr_blocks = [], prefix_list_ids  = [], security_groups  = [], self = false },
+    { from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"], description = "All outbound", ipv6_cidr_blocks = [], prefix_list_ids = [], security_groups = [], self = false },
   ]
 
   tags = {
@@ -146,15 +146,15 @@ resource "aws_security_group" "alb" {
 
 # ECS Security Group
 resource "aws_security_group" "ecs" {
-  name  = "${var.app_name}-ecs-sg"
+  name   = "${var.app_name}-ecs-sg"
   vpc_id = aws_vpc.main.id
 
   ingress = [
-    { from_port = var.ecs_container_port, to_port = var.ecs_container_port, protocol = "tcp", security_groups = [aws_security_group.alb.id], description = "From ALB", cidr_blocks = [], ipv6_cidr_blocks = [], prefix_list_ids  = [], self = false },
+    { from_port = var.ecs_container_port, to_port = var.ecs_container_port, protocol = "tcp", security_groups = [aws_security_group.alb.id], description = "From ALB", cidr_blocks = [], ipv6_cidr_blocks = [], prefix_list_ids = [], self = false },
   ]
 
   egress = [
-    { from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"], description = "All outbound", ipv6_cidr_blocks = [], prefix_list_ids  = [], security_groups  = [], self = false },
+    { from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"], description = "All outbound", ipv6_cidr_blocks = [], prefix_list_ids = [], security_groups = [], self = false },
   ]
 
   tags = {

@@ -47,11 +47,11 @@ variable "ecs_task_execution_role_arn" {
 }
 
 variable "ecs_task_role_arn" {
-  type = string  
+  type = string
 }
 
 variable "repository_url" {
-  type = string  
+  type = string
 }
 
 variable "private_subnet_ids" {

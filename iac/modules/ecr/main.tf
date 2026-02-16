@@ -11,7 +11,7 @@ resource "aws_ecr_repository" "app" {
   }
 
   lifecycle {
-    prevent_destroy = false  # set true to protect from accidental deletion
+    prevent_destroy = false # set true to protect from accidental deletion
   }
 
   tags = {
@@ -33,9 +33,9 @@ resource "aws_ecr_lifecycle_policy" "app_lifecycle" {
         rulePriority = 1
         description  = "Keep last 10 images"
         selection = {
-          tagStatus     = "any"
-          countType     = "imageCountMoreThan"
-          countNumber   = 10
+          tagStatus   = "any"
+          countType   = "imageCountMoreThan"
+          countNumber = 10
         }
         action = {
           type = "expire"
