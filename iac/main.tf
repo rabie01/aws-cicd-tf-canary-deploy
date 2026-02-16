@@ -2,11 +2,11 @@
 module "vpc" {
   source = "./modules/vpc"
 
-  app_name              = var.app_name
-  environment           = var.environment
-  vpc_cidr              = var.vpc_cidr
-  az_count              = var.az_count
-  ecs_container_port    = var.ecs_container_port
+  app_name           = var.app_name
+  environment        = var.environment
+  vpc_cidr           = var.vpc_cidr
+  az_count           = var.az_count
+  ecs_container_port = var.ecs_container_port
 }
 
 # IAM module

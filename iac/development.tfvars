@@ -1,14 +1,14 @@
-environment           = "development"
-vpc_cidr              = "10.0.0.0/16"
-az_count              = 2
-ecs_container_port    = 3000
-container_cpu = "256"
-container_memory = "512"
-ecs_desired_count = 2
-ecr_image_tag = "latest"
-ecs_cluster_name = "turbovets-cluster"
-ecs_service_name = "turbovets-service"
-ecs_task_family = "turbovets-task"
-app_name = "turbovets"
-aws_region = "us-east-1"
+environment        = "development"
+vpc_cidr           = "10.0.0.0/16"
+az_count           = 2
+ecs_container_port = 3000
+container_cpu      = "256"
+container_memory   = "512"
+ecs_desired_count  = 2
+ecr_image_tag      = "latest"
+ecs_cluster_name   = "turbovets-cluster"
+ecs_service_name   = "turbovets-service"
+ecs_task_family    = "turbovets-task"
+app_name           = "turbovets"
+aws_region         = "us-east-1"
 
