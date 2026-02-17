@@ -15,7 +15,6 @@ module "iam" {
 
   app_name     = var.app_name
   environment  = var.environment
-  aws_region   = var.aws_region
   ecr_repo_arn = module.ecr.repository_arn
 }
 
