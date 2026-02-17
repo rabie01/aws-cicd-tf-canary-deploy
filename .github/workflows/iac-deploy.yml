@@ -38,7 +38,7 @@ env:
 
 jobs:
   plan:
-    if: ${{ github.event.inputs.environment == 'production' || github.event.inputs.action == 'plan' }}
+    if: ${{ github.event.inputs.action == 'plan' || (github.event.inputs.action == 'deploy' && github.event.inputs.environment == 'production') }}
     runs-on: ubuntu-latest
 
     steps:
