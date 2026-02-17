@@ -27,8 +27,8 @@ env:
   ECS_CLUSTER_NAME: turbovets-cluster
   CONTAINER_PORT: 3000
   CONTAINER_NAME: turbovets
-  CODEDEPLOY_APPLICATION_NAME: turbovets-production
-  CODEDEPLOY_DEPLOYMENT_GROUP: turbovets-production-dg
+  CODEDEPLOY_APPLICATION_NAME: turbovets
+  CODEDEPLOY_DEPLOYMENT_GROUP: turbovets-dg
 
 jobs:
   build-and-push:
