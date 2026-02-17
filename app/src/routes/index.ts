@@ -3,7 +3,7 @@ import { Router } from 'express';
 const router = Router();
 
 router.get('/', (_req, res) => {
-  res.send('Hello from Express + TypeScript!!!codedeploy');
+  res.send('Hello from Express + TypeScript!codedeploy');
 });
 
 // Health check endpoint
