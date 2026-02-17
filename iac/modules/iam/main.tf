@@ -123,7 +123,7 @@ data "aws_iam_policy_document" "codedeploy_assume_role" {
   }
 }
 resource "aws_iam_role" "codedeploy" {
-  name = "${var.app_name}-${var.environment}-codedeploy-role"
+  name               = "${var.app_name}-${var.environment}-codedeploy-role"
   assume_role_policy = data.aws_iam_policy_document.codedeploy_assume_role.json
 
 }
