@@ -91,6 +91,10 @@ resource "aws_lb_listener" "http" {
   port              = 80
   protocol          = "HTTP"
 
+  lifecycle {
+    ignore_changes = [default_action[0].target_group_arn]
+  }
+
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.blue.arn
