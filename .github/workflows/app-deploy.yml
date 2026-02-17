@@ -3,7 +3,7 @@ name: Deploy the App
 on:
   push:
     branches:
-      - hcl
+      - main
     paths:
       - 'app/**'
       - '!app/README.md'
@@ -11,7 +11,7 @@ on:
 
   pull_request:
     branches:
-      - hcl
+      - main
     paths:
       - 'app/**'
       - '!app/README.md'
