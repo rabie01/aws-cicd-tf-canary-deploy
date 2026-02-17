@@ -1,5 +1,5 @@
 resource "aws_codedeploy_app" "this" {
-  name             = "${var.app_name}"
+  name             = var.app_name
   compute_platform = "ECS"
 }
 
