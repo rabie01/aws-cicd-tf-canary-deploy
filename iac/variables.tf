@@ -75,5 +75,6 @@ variable "ecr_image_tag" {
 variable "codedeploy_deployment_config_name" {
   type        = string
   description = "CodeDeploy deployment configuration name"
-  default     = "CodeDeployDefault.ECSAllAtOnce"
+  # default     = "CodeDeployDefault.ECSAllAtOnce"
+  default = "CodeDeployDefault.ECSCanary10Percent5Minutes"
 }
