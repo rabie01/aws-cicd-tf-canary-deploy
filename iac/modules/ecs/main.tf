@@ -120,6 +120,12 @@ resource "aws_ecs_service" "this" {
     type = "CODE_DEPLOY"
   }
 
+  load_balancer {
+    target_group_arn = aws_lb_target_group.blue.arn
+    container_name   = var.app_name
+    container_port   = var.container_port
+  }
+
   depends_on = [
     aws_ecs_task_definition.this
   ]
