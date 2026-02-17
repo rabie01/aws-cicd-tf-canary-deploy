@@ -20,5 +20,4 @@ output "green_target_group_name" {
 
 output "alb_listener_arn" {
   value = aws_lb_listener.http.arn
-  
 }
