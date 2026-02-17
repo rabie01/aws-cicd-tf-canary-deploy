@@ -107,3 +107,28 @@ resource "aws_iam_role_policy" "ecs_task_cloudwatch_policy" {
   role   = aws_iam_role.ecs_task_role.id
   policy = data.aws_iam_policy_document.ecs_task_cloudwatch.json
 }
+
+#########################################################
+# codedeploy IAM role for ECS deployments
+#########################################################
+resource "aws_iam_role" "codedeploy" {
+  name = "${var.app_name}-${var.environment}-codedeploy-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "codedeploy.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "codedeploy_policy" {
+  role       = aws_iam_role.codedeploy.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRoleForECS"
+}

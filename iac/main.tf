@@ -51,3 +51,17 @@ module "ecs" {
   vpc_id                      = module.vpc.vpc_id
   public_subnet_ids           = module.vpc.public_subnet_ids
 }
+
+# CodeDeploy module
+module "codedeploy" {
+  source                            = "./modules/codedeploy"
+  app_name                          = var.app_name
+  environment                       = var.environment
+  aws_ecs_cluster_name              = var.ecs_cluster_name
+  aws_ecs_service_name              = var.ecs_service_name
+  codedeploy_deployment_config_name = var.codedeploy_deployment_config_name
+  blue_target_group_name            = module.ecs.blue_target_group_name
+  green_target_group_name           = module.ecs.green_target_group_name
+  alb_listener_arn                  = module.ecs.alb_listener_arn
+  codedeploy_role_arn               = module.iam.codedeploy_role_arn
+}

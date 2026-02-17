@@ -71,3 +71,9 @@ variable "ecr_image_tag" {
   description = "ECR image tag"
   default     = "latest"
 }
+
+variable "codedeploy_deployment_config_name" {
+  type        = string
+  description = "CodeDeploy deployment configuration name"
+  default     = "CodeDeployDefault.ECSAllAtOnce"
+}

@@ -69,27 +69,22 @@ resource "aws_lb" "this" {
   }
 }
 
-resource "aws_lb_target_group" "this" {
-  name        = "${var.app_name}-${var.environment}-tg"
+resource "aws_lb_target_group" "blue" {
+  name        = "${var.app_name}-${var.environment}-blue"
   port        = var.container_port
   protocol    = "HTTP"
   target_type = "ip"
   vpc_id      = var.vpc_id
-
-  health_check {
-    path                = "/health"
-    protocol            = "HTTP"
-    matcher             = "200-399"
-    interval            = 30
-    timeout             = 5
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-  }
-
-  tags = {
-    Name = "${var.app_name}-${var.environment}-tg"
-  }
 }
+
+resource "aws_lb_target_group" "green" {
+  name        = "${var.app_name}-${var.environment}-green"
+  port        = var.container_port
+  protocol    = "HTTP"
+  target_type = "ip"
+  vpc_id      = var.vpc_id
+}
+
 
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.this.arn
@@ -98,7 +93,7 @@ resource "aws_lb_listener" "http" {
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.this.arn
+    target_group_arn = aws_lb_target_group.blue.arn
   }
 }
 
@@ -121,10 +116,8 @@ resource "aws_ecs_service" "this" {
     assign_public_ip = false
   }
 
-  load_balancer {
-    target_group_arn = aws_lb_target_group.this.arn
-    container_name   = var.app_name
-    container_port   = var.container_port
+  deployment_controller {
+    type = "CODE_DEPLOY"
   }
 
   depends_on = [

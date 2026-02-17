@@ -8,11 +8,6 @@ variable "environment" {
   description = "Environment name"
 }
 
-variable "aws_region" {
-  type        = string
-  description = "AWS region"
-}
-
 variable "ecr_repo_arn" {
   type        = string
   description = "ECR repository ARN"
