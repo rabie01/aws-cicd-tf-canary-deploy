@@ -56,11 +56,13 @@ module "codedeploy" {
   source                            = "./modules/codedeploy"
   app_name                          = var.app_name
   environment                       = var.environment
-  aws_ecs_cluster_name              = var.ecs_cluster_name
-  aws_ecs_service_name              = var.ecs_service_name
   codedeploy_deployment_config_name = var.codedeploy_deployment_config_name
+  aws_ecs_cluster_name              = module.ecs.cluster_name
+  aws_ecs_service_name              = module.ecs.service_name
   blue_target_group_name            = module.ecs.blue_target_group_name
   green_target_group_name           = module.ecs.green_target_group_name
   alb_listener_arn                  = module.ecs.alb_listener_arn
   codedeploy_role_arn               = module.iam.codedeploy_role_arn
+
+  depends_on = [module.ecs]
 }
