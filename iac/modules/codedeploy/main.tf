@@ -1,11 +1,11 @@
 resource "aws_codedeploy_app" "this" {
-  name             = "${var.app_name}-${var.environment}"
+  name             = "${var.app_name}"
   compute_platform = "ECS"
 }
 
 resource "aws_codedeploy_deployment_group" "this" {
   app_name              = aws_codedeploy_app.this.name
-  deployment_group_name = "${var.app_name}-${var.environment}-dg"
+  deployment_group_name = "${var.app_name}-dg"
   service_role_arn      = var.codedeploy_role_arn
 
   deployment_config_name = var.codedeploy_deployment_config_name

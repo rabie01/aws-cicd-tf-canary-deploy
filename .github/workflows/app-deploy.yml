@@ -27,6 +27,8 @@ env:
   ECS_CLUSTER_NAME: turbovets-cluster
   CONTAINER_PORT: 3000
   CONTAINER_NAME: turbovets
+  CODEDEPLOY_APPLICATION_NAME: turbovets-production
+  CODEDEPLOY_DEPLOYMENT_GROUP: turbovets-production-dg
 
 jobs:
   build-and-push:
@@ -86,13 +88,38 @@ jobs:
           container-name: ${{ env.CONTAINER_NAME }}
           image: ${{ needs.build-and-push.outputs.image-uri }}
 
-      - name: Roll out new task version
+      - name: Create CodeDeploy AppSpec
+        run: |
+          cat > appspec.json << 'EOF'
+          {
+            "version": 0.0,
+            "Resources": [
+              {
+                "TargetService": {
+                  "Type": "AWS::ECS::Service",
+                  "Properties": {
+                    "TaskDefinition": "<TASK_DEFINITION>",
+                    "LoadBalancerInfo": {
+                      "ContainerName": "${{ env.CONTAINER_NAME }}",
+                      "ContainerPort": ${{ env.CONTAINER_PORT }}
+                    }
+                  }
+                }
+              }
+            ]
+          }
+          EOF
+
+      - name: Roll out new task version (CodeDeploy)
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
           task-definition: ${{ steps.render-task-def.outputs.task-definition }}
           service: ${{ env.ECS_SERVICE_NAME }}
           cluster: ${{ env.ECS_CLUSTER_NAME }}
-          wait-for-service-stability: true 
+          wait-for-service-stability: true
+          codedeploy-appspec: appspec.json
+          codedeploy-application: ${{ env.CODEDEPLOY_APPLICATION_NAME }}
+          codedeploy-deployment-group: ${{ env.CODEDEPLOY_DEPLOYMENT_GROUP }}
 
   test:
     runs-on: ubuntu-latest
