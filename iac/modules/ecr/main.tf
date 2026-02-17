@@ -5,6 +5,7 @@
 resource "aws_ecr_repository" "app" {
   name                 = "${var.app_name}-app"
   image_tag_mutability = "MUTABLE"
+  force_delete         = true # set to true to allow deletion of repository with images (use with caution)
 
   image_scanning_configuration {
     scan_on_push = true
